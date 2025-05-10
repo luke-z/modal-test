@@ -11,7 +11,7 @@ app = modal.App("docling-test")
 
 image = modal.Image.from_registry("lukee/docling")
 
-@app.function(image=image, gpu=modal.gpu.A100(size="40GB"))
+@app.function(image=image, gpu="A100-40GB")
 def extract_text(pdf_url):
     response = requests.get(pdf_url, stream=True)
     response.raise_for_status()
