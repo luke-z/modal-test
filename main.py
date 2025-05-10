@@ -12,13 +12,7 @@ app = modal.App("docling-test")
 image = modal.Image.from_registry("lukee/docling")
 
 @app.function(image=image, gpu="A100-40GB")
-def extract_text(pdf_url):
-    response = requests.get(pdf_url, stream=True)
-    response.raise_for_status()
-
-    buf = BytesIO(response.content)
-    source = DocumentStream(name="sample.pdf", stream=buf)
-
+def docling_extract(buf):
     pipeline_options = PdfPipelineOptions()
     pipeline_options.artifacts_path = "/root/.cache/docling/models"
     pipeline_options.accelerator_options = AcceleratorOptions(
@@ -33,10 +27,18 @@ def extract_text(pdf_url):
         }
     )
 
+    source = DocumentStream(name="sample.pdf", stream=buf)
     result = converter.convert(source)
 
     markdown = result.document.export_to_markdown(image_mode=ImageRefMode.PLACEHOLDER)
     return markdown
+
+@app.function(image=image)
+def extract_text(url):
+    response = requests.get(url, stream=True)
+    response.raise_for_status()
+    buf = BytesIO(response.content)
+    return docling_extract.remote(buf)
 
 
 @app.local_entrypoint()
